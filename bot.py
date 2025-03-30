@@ -33,19 +33,23 @@ async def on_message(message):
         return
 
     await bot.process_commands(message)  # Ensure command processing
+
+@bot.command(help="Responds with 'Pong!'")
+async def ping(ctx):
+    await ctx.send('Pong!')
     
-@bot.command()
+@bot.command(help="Sends prompt to chatgpt4 and responds with answer")
 async def ask(ctx, *, question: str):
     try:
         await ctx.message.add_reaction(confirm)
-        reply = sendGPTRequest(question, None, "gpt-4")
+        reply = await sendGPTRequest(question, None, "gpt-4")
         await ctx.send(reply)
     except Exception as e:
         print(f"Error occurred: {e}")  # Log the error
         await ctx.send("Error: An issue occurred while processing your question.")
 
 #TODO: add ability to read more file types
-@bot.command()
+@bot.command(help="Summarizes content of the attached pdf file")
 async def sumcontent(ctx):
     try:
         if ctx.message.attachments:
@@ -54,7 +58,7 @@ async def sumcontent(ctx):
             if text:
                 # check which model to use based on text size
                 model = whichModel(text)
-                summary = sendGPTRequest("Summarize the following text concisely:", text, model)
+                summary = await sendGPTRequest("Summarize the following text concisely:", text, model)
 
                 await ctx.send(f"📄 **PDF Summary using {model}:**\n```{summary}```")
 
@@ -64,7 +68,7 @@ async def sumcontent(ctx):
 
 
 #TODO: add ability to read more file types
-@bot.command()
+@bot.command(help="Answers questions about the attached pdf file")
 async def askaboutcontent(ctx, *, question: str):
     try:
         if ctx.message.attachments:
@@ -73,7 +77,7 @@ async def askaboutcontent(ctx, *, question: str):
             if text:
                 # check which model to use based on text size
                 model = whichModel(text)
-                summary = sendGPTRequest(question, text, model)
+                summary = await sendGPTRequest(question, text, model)
 
                 await ctx.send(f"📄 **Response using {model}:**\n```{summary}```")
 
@@ -135,7 +139,7 @@ async def sendGPTRequest(question, text, model):
         print(f"Error occurred: {e}")  # Log the error
         return("Error: An issue occurred while processing your question.")
 
-async def whichModel(text):
+def whichModel(text):
     model = "gpt-4"
     wordCount = text.split()
 
