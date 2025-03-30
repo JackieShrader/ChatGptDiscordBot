@@ -20,6 +20,7 @@ intents = discord.Intents.all()
 intents.messages = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+# reaction to show user their message has been read by bot
 confirm = '\N{THUMBS UP SIGN}'
 
 @bot.event
@@ -47,8 +48,9 @@ async def ask(ctx, *, question: str):
         print(f"Error occurred: {e}")  # Log the error
         await ctx.send("Error: An issue occurred while processing your question.")
 
+#TODO: add ability to read more file types
 @bot.command()
-async def summarizepdf(ctx):
+async def sumcontent(ctx):
     try:
         if ctx.message.attachments:
             await ctx.message.add_reaction(confirm)
@@ -56,13 +58,13 @@ async def summarizepdf(ctx):
             model = "gpt-4"
             wordCount = text.split()
 
-            print(len(wordCount))
+            # for big files use turbo
             if(len(wordCount)>1800):
                 model = "gpt-4-turbo"
             if(text):
                 # Send extracted text to OpenAI for summarization
                 response = client.chat.completions.create(
-                    model=model,  # Use GPT-4 for better summarization
+                    model=model,
                     messages=[
                         {"role": "system", "content": "Summarize the following text concisely:"},
                         {"role": "user", "content": text}
@@ -75,10 +77,10 @@ async def summarizepdf(ctx):
         await ctx.send("Error: An issue occurred while processing your question.")
 
 
+#TODO: add ability to read more file types
 @bot.command()
-async def askaboutpdf(ctx, *, question: str):
+async def askaboutcontent(ctx, *, question: str):
     try:
-        """Reads and summarizes a PDF file attachment"""
         if ctx.message.attachments:
             await ctx.message.add_reaction(confirm)
             text = await readPDF(ctx)
@@ -90,7 +92,7 @@ async def askaboutpdf(ctx, *, question: str):
 
             if(text):
                 response = client.chat.completions.create(
-                    model=model,  # Use GPT-4 for better summarization
+                    model=model,
                     messages=[
                         {"role": "system", "content": question},
                         {"role": "user", "content": text}
@@ -101,7 +103,6 @@ async def askaboutpdf(ctx, *, question: str):
     except Exception as e:
         print(f"Error occurred: {e}")  # Log the error
         await ctx.send("Error: An issue occurred while processing your question.")
-
 
 
 async def readPDF(ctx):
