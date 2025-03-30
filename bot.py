@@ -51,16 +51,13 @@ async def sumcontent(ctx):
         if ctx.message.attachments:
             await ctx.message.add_reaction(confirm)
             text = await readPDF(ctx)
-            model = "gpt-4"
-            wordCount = text.split()
+            if text:
+                # check which model to use based on text size
+                model = whichModel(text)
+                summary = sendGPTRequest("Summarize the following text concisely:", text, model)
 
-            # for big files use turbo
-            if(len(wordCount)>1800):
-                model = "gpt-4-turbo"
+                await ctx.send(f"📄 **PDF Summary using {model}:**\n```{summary}```")
 
-            summary = sendGPTRequest("Summarize the following text concisely:", text, model)
-
-            await ctx.send(f"📄 **PDF Summary using {model}:**\n```{summary}```")
     except Exception as e:
         print(f"Error occurred: {e}")  # Log the error
         await ctx.send("Error: An issue occurred while processing your question.")
@@ -73,14 +70,13 @@ async def askaboutcontent(ctx, *, question: str):
         if ctx.message.attachments:
             await ctx.message.add_reaction(confirm)
             text = await readPDF(ctx)
-            model = "gpt-4"
-            wordCount = text.split()
+            if text:
+                # check which model to use based on text size
+                model = whichModel(text)
+                summary = sendGPTRequest(question, text, model)
 
-            if(len(wordCount)>8000):
-                model = "gpt-4-turbo"
+                await ctx.send(f"📄 **Response using {model}:**\n```{summary}```")
 
-            summary = sendGPTRequest(question, text, model)
-            await ctx.send(f"📄 **Response using {model}:**\n```{summary}```")
     except Exception as e:
         print(f"Error occurred: {e}")  # Log the error
         await ctx.send("Error: An issue occurred while processing your question.")
@@ -133,12 +129,19 @@ async def sendGPTRequest(question, text, model):
             messages=messages
         )
         response = response.choices[0].message.content
-        return response;
+        return response
 
     except Exception as e:
         print(f"Error occurred: {e}")  # Log the error
         return("Error: An issue occurred while processing your question.")
 
+async def whichModel(text):
+    model = "gpt-4"
+    wordCount = text.split()
+
+    if(len(wordCount)>8000):
+        model = "gpt-4-turbo"
+    return model
 
 # Run bot
 bot.run(DISCORD_TOKEN)
