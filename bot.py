@@ -38,11 +38,7 @@ async def on_message(message):
 async def ask(ctx, *, question: str):
     try:
         await ctx.message.add_reaction(confirm)
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": question}]
-        )
-        reply = response.choices[0].message.content
+        reply = sendGPTRequest(question, None, "gpt-4")
         await ctx.send(reply)
     except Exception as e:
         print(f"Error occurred: {e}")  # Log the error
@@ -61,17 +57,10 @@ async def sumcontent(ctx):
             # for big files use turbo
             if(len(wordCount)>1800):
                 model = "gpt-4-turbo"
-            if(text):
-                # Send extracted text to OpenAI for summarization
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": "Summarize the following text concisely:"},
-                        {"role": "user", "content": text}
-                    ]
-                )
-                summary = response.choices[0].message.content
-                await ctx.send(f"📄 **PDF Summary using {model}:**\n```{summary}```")
+
+            summary = sendGPTRequest("Summarize the following text concisely:", text, model)
+
+            await ctx.send(f"📄 **PDF Summary using {model}:**\n```{summary}```")
     except Exception as e:
         print(f"Error occurred: {e}")  # Log the error
         await ctx.send("Error: An issue occurred while processing your question.")
@@ -90,16 +79,8 @@ async def askaboutcontent(ctx, *, question: str):
             if(len(wordCount)>8000):
                 model = "gpt-4-turbo"
 
-            if(text):
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": question},
-                        {"role": "user", "content": text}
-                    ]
-                )
-                summary = response.choices[0].message.content
-                await ctx.send(f"📄 **Response using {model}:**\n```{summary}```")
+            summary = sendGPTRequest(question, text, model)
+            await ctx.send(f"📄 **Response using {model}:**\n```{summary}```")
     except Exception as e:
         print(f"Error occurred: {e}")  # Log the error
         await ctx.send("Error: An issue occurred while processing your question.")
@@ -133,6 +114,31 @@ async def readPDF(ctx):
             await ctx.send("⚠️ Please upload a `.pdf` file.")
     else:
         await ctx.send("⚠️ No file attached!")
+
+async def sendGPTRequest(question, text, model):
+    try:
+        # check if we have text to send as well or just a question
+        if text is None:
+            messages=[
+                {"role": "system", "content": question},
+            ]
+        else:
+            messages=[
+                {"role": "system", "content": question},
+                {"role": "user", "content": text}
+            ]
+                        
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages
+        )
+        response = response.choices[0].message.content
+        return response;
+
+    except Exception as e:
+        print(f"Error occurred: {e}")  # Log the error
+        return("Error: An issue occurred while processing your question.")
+
 
 # Run bot
 bot.run(DISCORD_TOKEN)
